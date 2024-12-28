@@ -3,6 +3,7 @@
 namespace WixToolset.Harvesters
 {
     using System;
+    using System.Collections.Generic;
     using System.IO;
     using WixToolset.Data;
     using WixToolset.Data.WindowsInstaller;
@@ -29,6 +30,9 @@ namespace WixToolset.Harvesters
             this.fileHarvester = new FileHarvester();
             this.SetUniqueIdentifiers = true;
         }
+
+        public List<string> Excludes { get; set; } = new List<string>();
+        public List<string> Includes { get; set; } = new List<string>();
 
         /// <summary>
         /// Gets or sets what type of elements are to be generated.
@@ -213,6 +217,18 @@ namespace WixToolset.Harvesters
             // harvest the child directories
             foreach (string childDirectoryPath in Directory.GetDirectories(path))
             {
+                if (this.Includes.Count > 0 && !this.Includes.Contains(childDirectoryPath.ToLower()))
+                {
+                    Console.WriteLine("include dir: {0}", childDirectoryPath.ToLower());
+                    continue;
+                }
+
+                if (this.Excludes.Count > 0 && this.Excludes.Contains(childDirectoryPath.ToLower()))
+                {
+                    Console.WriteLine("exclude dir: {0}", childDirectoryPath.ToLower());
+                    continue;
+                }
+
                 var childDirectoryName = Path.GetFileName(childDirectoryPath);
                 Wix.IParentElement newParent;
                 Wix.Directory childDirectory = null;
@@ -242,6 +258,7 @@ namespace WixToolset.Harvesters
                     // keep the directory if it contained any files (or empty directories are being kept)
                     if (0 < childFileCount || this.KeepEmptyDirectories)
                     {
+                        Console.WriteLine("harvest dir:{0}", childDirectoryPath);
                         directory.AddChild(childDirectory);
                     }
                 }
@@ -251,11 +268,27 @@ namespace WixToolset.Harvesters
 
             // harvest the files
             string[] files = Directory.GetFiles(path);
+            int filesLength = 0;
             if (0 < files.Length)
             {
                 foreach (string filePath in Directory.GetFiles(path))
                 {
                     string fileName = Path.GetFileName(filePath);
+
+                    if (this.Includes.Count > 0 && !this.Includes.Contains(filePath.ToLower()))
+                    {
+                        Console.WriteLine("include file: {0}", filePath.ToLower());
+                        continue;
+                    }
+
+                    if (this.Excludes.Count > 0 && this.Excludes.Contains(filePath.ToLower()))
+                    {
+                        Console.WriteLine("exclude file: {0}", filePath.ToLower());
+                        continue;
+                    }
+					
+					Console.WriteLine("harvest file: {0}", filePath);
+
                     string source = String.Concat("SourceDir\\", relativePath, fileName);
 
                     Wix.ISchemaElement newChild;
@@ -289,6 +322,7 @@ namespace WixToolset.Harvesters
                     }
 
                     harvestParent.AddChild(newChild);
+                    filesLength++;
                 }
             }
             else if (generateType != GenerateType.PayloadGroup && 0 == fileCount && this.KeepEmptyDirectories)
@@ -307,7 +341,7 @@ namespace WixToolset.Harvesters
                 directory.AddChild(component);
             }
 
-            return fileCount + files.Length;
+            return fileCount + filesLength; //files.Length;
         }
     }
 }

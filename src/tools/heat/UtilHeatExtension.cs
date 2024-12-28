@@ -5,6 +5,7 @@ namespace WixToolset.Harvesters
     using System;
     using System.Collections.Generic;
     using System.IO;
+	using System.Text.RegularExpressions;
     using WixToolset.Data;
     using WixToolset.Harvesters.Data;
     using WixToolset.Harvesters.Extensibility;
@@ -67,6 +68,8 @@ namespace WixToolset.Harvesters
             var utilMutator = new UtilMutator();
             var transformMutators = new List<UtilTransformMutator>();
             var generateType = GenerateType.Components;
+            string libsFile = null;
+            string olbsFile = null;
 
             // select the harvester
             switch (type)
@@ -306,6 +309,86 @@ namespace WixToolset.Harvesters
                             // TODO: error message - not applicable
                         }
                     }
+                    else if ("libs" == truncatedCommandSwitch)
+                    {
+                        libsFile = this.GetArgumentParameter(args, i, true);
+
+                        if (0 <= libsFile.IndexOf('\"'))
+                        {
+                            this.Core.Messaging.Write(ErrorMessages.PathCannotContainQuote(libsFile));
+                            return;
+                        }
+
+                        try
+                        {
+                            libsFile = Path.GetFullPath(libsFile);
+                        }
+                        catch (Exception e)
+                        {
+                            this.Core.Messaging.Write(ErrorMessages.InvalidCommandLineFileName(libsFile, e.Message));
+                            return;
+                        }
+
+
+                        //Console.WriteLine( string.Join("\n", ReadTextFileToList(libsFile).ToArray() ) );
+                    }
+                    else if ("olbs" == truncatedCommandSwitch)
+                    {
+                        olbsFile = this.GetArgumentParameter(args, i, true);
+
+                        if (0 <= olbsFile.IndexOf('\"'))
+                        {
+                            this.Core.Messaging.Write(ErrorMessages.PathCannotContainQuote(olbsFile));
+                            return;
+                        }
+
+                        try
+                        {
+                            olbsFile = Path.GetFullPath(olbsFile);
+                        }
+                        catch (Exception e)
+                        {
+                            this.Core.Messaging.Write(ErrorMessages.InvalidCommandLineFileName(olbsFile, e.Message));
+                            return;
+                        }
+                    }
+                    else if ("excludes" == truncatedCommandSwitch)
+                    {
+                        string excludesFile = this.GetArgumentParameter(args, i, true);
+
+                        try
+                        {
+                            excludesFile = Path.GetFullPath(excludesFile);
+                            if (harvesterExtension is DirectoryHarvester harvester)
+                            {
+                                this.ReadTextFileToList(excludesFile, harvester.Excludes);
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            this.Core.Messaging.Write(ErrorMessages.InvalidCommandLineFileName(libsFile, e.Message));
+                            return;
+                        }
+                    }
+                    else if ("includes" == truncatedCommandSwitch)
+                    {
+                        string excludesFile = this.GetArgumentParameter(args, i, true);
+
+                        try
+                        {
+                            excludesFile = Path.GetFullPath(excludesFile);
+                            if (harvesterExtension is DirectoryHarvester harvester)
+                            {
+                                this.ReadTextFileToList(excludesFile, harvester.Includes);
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            this.Core.Messaging.Write(ErrorMessages.InvalidCommandLineFileName(libsFile, e.Message));
+                            return;
+                        }
+                    }
+
                 }
             }
 
@@ -316,7 +399,18 @@ namespace WixToolset.Harvesters
 
                 if (!suppressHarvestingRegistryValues)
                 {
-                    this.Core.Mutator.AddExtension(new UtilHarvesterMutator());
+                    UtilHarvesterMutator utilHarvesterMutator = new UtilHarvesterMutator();
+                    if (!String.IsNullOrEmpty(libsFile))
+                    {
+                        Console.WriteLine("libsFile: {0}", libsFile);
+                        this.ReadTextFileToList(libsFile, utilHarvesterMutator.Libs);
+                    }
+                    if (!String.IsNullOrEmpty(olbsFile))
+                    {
+                        Console.WriteLine("olbsFile: {0}", olbsFile);
+                        this.ReadTextFileToList(olbsFile, utilHarvesterMutator.Olbs);
+                    }
+                    this.Core.Mutator.AddExtension(utilHarvesterMutator);
                 }
 
                 this.Core.Mutator.AddExtension(utilFinalizeHarvesterMutator);
@@ -353,6 +447,59 @@ namespace WixToolset.Harvesters
             {
                 this.Core.Mutator.AddExtension(transformMutator);
             }
+        }
+
+        private List<string> ReadTextFileToList(string source, List<string> tmp)
+        {
+            //List<string> tmp = new List<string>();
+
+            try
+            {
+
+                //tmp = File.ReadAllLines(source).ToList();
+                string RootDirectory = Path.GetFullPath(this.Core.Harvester.Core.ExtensionArgument);
+                using (StreamReader sr = new StreamReader(source))
+                {
+                    //text = reader.read.ReadToEnd();
+                    while (sr.Peek() >= 0)
+                    {
+                        string filename = sr.ReadLine();
+                        if (!filename.StartsWith("#", StringComparison.Ordinal))
+                        {
+                            tmp.Add(Path.GetFullPath( Path.Combine(RootDirectory, filename) ).ToLower() );
+                        }
+                    }
+                        
+                }
+            }
+            catch (Exception e)
+            {
+                this.Core.Messaging.Write(ErrorMessages.InvalidCommandLineFileName(source, e.Message));
+            }
+
+            //Console.WriteLine(string.Join("\n", tmp.ToArray()));
+            return tmp;
+        }
+
+        private List<Wildcard> ReadTextFileToList(string source, List<Wildcard> tmp)
+        {
+            try {
+                var RootDirectory = Path.GetFullPath(this.Core.Harvester.Core.ExtensionArgument);
+                using (StreamReader sr = new StreamReader(source)) {
+                    while (sr.Peek() >= 0) {
+                        var filename = sr.ReadLine();
+                        if (!filename.StartsWith("#", StringComparison.Ordinal))
+                        {
+                            tmp.Add(new Wildcard(Wildcard.GetFullPath(Path.Combine(RootDirectory, filename)), RegexOptions.IgnoreCase));
+                        }
+                    }
+
+                }
+            }
+            catch (Exception e) {
+                this.Core.Messaging.Write(ErrorMessages.InvalidCommandLineFileName(source, e.Message));
+            }
+            return tmp;
         }
 
         private string GetArgumentParameter(string[] args, int index)

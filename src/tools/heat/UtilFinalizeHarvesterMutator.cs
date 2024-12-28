@@ -441,7 +441,8 @@ namespace WixToolset.Harvesters
                             {
                                 if (null == registryValue.Name)
                                 {
-                                    wixClass.Description = registryValue.Value;
+                                    if (!string.IsNullOrEmpty(registryValue.Value))
+                                        wixClass.Description = registryValue.Value;
                                     processed = true;
                                 }
                                 else if (String.Equals(registryValue.Name, "AppID", StringComparison.OrdinalIgnoreCase))
@@ -586,6 +587,12 @@ namespace WixToolset.Harvesters
                                             && registryValue.Value.EndsWith("]", StringComparison.Ordinal))
                                         {
                                             parentIndex = String.Concat("file/", registryValue.Value.Substring(2, registryValue.Value.Length - 3));
+                                            processed = true;
+                                        }
+                                        else if ((registryValue.Value.StartsWith("\"[!", StringComparison.Ordinal) || registryValue.Value.StartsWith("\"[#", StringComparison.Ordinal))
+                                            && registryValue.Value.EndsWith("]\"", StringComparison.Ordinal))
+                                        {
+                                            parentIndex = String.Concat("file/", registryValue.Value.Substring(3, registryValue.Value.Length - 5));
                                             processed = true;
                                         }
                                         else if (String.Equals(Path.GetFileName(registryValue.Value), "mscoree.dll", StringComparison.OrdinalIgnoreCase))
@@ -765,7 +772,8 @@ namespace WixToolset.Harvesters
                             {
                                 if (1 == parts.Length)
                                 {
-                                    progId.Description = registryValue.Value;
+                                    if (!string.IsNullOrEmpty(registryValue.Value))
+                                        progId.Description = registryValue.Value;
                                     processed = true;
                                 }
                                 else if (2 == parts.Length)

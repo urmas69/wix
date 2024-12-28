@@ -3,8 +3,10 @@
 namespace WixToolset.Harvesters
 {
     using System;
+    using System.Collections.Generic;
     using System.Collections;
     using System.IO;
+    using System.Linq;
     using System.Reflection;
     using System.Runtime.InteropServices;
     using WixToolset.Data;
@@ -63,6 +65,10 @@ namespace WixToolset.Harvesters
             get { return 100; }
         }
 
+        public List<Wildcard> Libs { get; set; } = new List<Wildcard>();
+
+        public List<string> Olbs { get; set; } = new List<string>();
+ 
         /// <summary>
         /// Mutate a WiX document.
         /// </summary>
@@ -114,11 +120,15 @@ namespace WixToolset.Harvesters
                 string fileExtension = Path.GetExtension(file.Source);
                 string fileSource = this.Core.ResolveFilePath(file.Source);
 
-                if (String.Equals(".ax", fileExtension, StringComparison.OrdinalIgnoreCase) || // DirectShow filter
+                if ((String.Equals(".ax", fileExtension, StringComparison.OrdinalIgnoreCase) || // DirectShow filter
                     String.Equals(".dll", fileExtension, StringComparison.OrdinalIgnoreCase) ||
                     String.Equals(".exe", fileExtension, StringComparison.OrdinalIgnoreCase) ||
                     String.Equals(".ocx", fileExtension, StringComparison.OrdinalIgnoreCase)) // ActiveX
+                    && (Libs.Count == 0 || Libs.Any(s => s.IsMatch(fileSource)))  //Libs.Contains(fileSource.ToLower()
+                    ) // ActiveX
                 {
+
+                    Console.WriteLine("libs: {0}", fileSource);
                     // try the assembly harvester
                     try
                     {
@@ -145,8 +155,11 @@ namespace WixToolset.Harvesters
                     }
                 }
                 else if (String.Equals(".olb", fileExtension, StringComparison.OrdinalIgnoreCase) || // type library
-                          String.Equals(".tlb", fileExtension, StringComparison.OrdinalIgnoreCase)) // type library
+                          String.Equals(".tlb", fileExtension, StringComparison.OrdinalIgnoreCase) ||
+                          ( Olbs.Count > 0 && Olbs.Contains(fileSource.ToLower()) )
+                          ) // type library
                 {
+                    Console.WriteLine("olbs: {0}", fileSource);
                     // try the type library harvester
                     try
                     {
