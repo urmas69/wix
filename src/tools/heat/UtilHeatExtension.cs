@@ -391,7 +391,7 @@ namespace WixToolset.Harvesters
                     if (!String.IsNullOrEmpty(olbsFile))
                     {
                         Console.WriteLine("olbsFile: {0}", olbsFile);
-                        this.ReadTextFileToList(olbsFile, utilHarvesterMutator.Olbs);
+                        utilHarvesterMutator.OlbsFilter.Load(olbsFile, RootDirectory);
                     }
                     this.Core.Mutator.AddExtension(utilHarvesterMutator);
                 }
@@ -430,38 +430,6 @@ namespace WixToolset.Harvesters
             {
                 this.Core.Mutator.AddExtension(transformMutator);
             }
-        }
-
-        private List<string> ReadTextFileToList(string source, List<string> tmp)
-        {
-            //List<string> tmp = new List<string>();
-
-            try
-            {
-
-                //tmp = File.ReadAllLines(source).ToList();
-                string RootDirectory = Path.GetFullPath(this.Core.Harvester.Core.ExtensionArgument);
-                using (StreamReader sr = new StreamReader(source))
-                {
-                    //text = reader.read.ReadToEnd();
-                    while (sr.Peek() >= 0)
-                    {
-                        string filename = sr.ReadLine();
-                        if (!filename.StartsWith("#", StringComparison.Ordinal))
-                        {
-                            tmp.Add(Path.GetFullPath( Path.Combine(RootDirectory, filename) ).ToLower() );
-                        }
-                    }
-                        
-                }
-            }
-            catch (Exception e)
-            {
-                this.Core.Messaging.Write(ErrorMessages.InvalidCommandLineFileName(source, e.Message));
-            }
-
-            //Console.WriteLine(string.Join("\n", tmp.ToArray()));
-            return tmp;
         }
 
         private string GetArgumentParameter(string[] args, int index)

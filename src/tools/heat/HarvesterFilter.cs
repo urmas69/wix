@@ -96,7 +96,7 @@ namespace WixToolset.Harvesters
                 var contains = _keyList.Any(r => r.IsMatch(name)); //  .Contains(name);
                 if (_isInclusive) return contains;
                 if (_isExclusive) return !contains;
-                return true;
+                return false; //IsIncl is explicit
             }
         }
 

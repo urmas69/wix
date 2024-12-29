@@ -66,8 +66,7 @@ namespace WixToolset.Harvesters
         }
 
         public HarvesterFilter LibsFilter = new HarvesterFilter();
-
-        public List<string> Olbs { get; set; } = new List<string>();
+        public HarvesterFilter OlbsFilter = new HarvesterFilter();
  
         /// <summary>
         /// Mutate a WiX document.
@@ -124,7 +123,7 @@ namespace WixToolset.Harvesters
                     String.Equals(".dll", fileExtension, StringComparison.OrdinalIgnoreCase) ||
                     String.Equals(".exe", fileExtension, StringComparison.OrdinalIgnoreCase) ||
                     String.Equals(".ocx", fileExtension, StringComparison.OrdinalIgnoreCase)) // ActiveX
-                    && this.LibsFilter.IsIncl(fileSource)
+                    && !this.LibsFilter.IsFiltered(fileSource)
                     ) // ActiveX
                 {
 
@@ -156,7 +155,7 @@ namespace WixToolset.Harvesters
                 }
                 else if (String.Equals(".olb", fileExtension, StringComparison.OrdinalIgnoreCase) || // type library
                           String.Equals(".tlb", fileExtension, StringComparison.OrdinalIgnoreCase) ||
-                          ( Olbs.Count > 0 && Olbs.Contains(fileSource.ToLower()) )
+                          this.OlbsFilter.IsIncl(fileSource)
                           ) // type library
                 {
                     Console.WriteLine("olbs: {0}", fileSource);
