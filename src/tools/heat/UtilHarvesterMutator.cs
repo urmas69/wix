@@ -65,7 +65,7 @@ namespace WixToolset.Harvesters
             get { return 100; }
         }
 
-        public List<Wildcard> Libs { get; set; } = new List<Wildcard>();
+        public HarvesterFilter LibsFilter = new HarvesterFilter();
 
         public List<string> Olbs { get; set; } = new List<string>();
  
@@ -124,7 +124,7 @@ namespace WixToolset.Harvesters
                     String.Equals(".dll", fileExtension, StringComparison.OrdinalIgnoreCase) ||
                     String.Equals(".exe", fileExtension, StringComparison.OrdinalIgnoreCase) ||
                     String.Equals(".ocx", fileExtension, StringComparison.OrdinalIgnoreCase)) // ActiveX
-                    && (Libs.Count == 0 || Libs.Any(s => s.IsMatch(fileSource)))  //Libs.Contains(fileSource.ToLower()
+                    && this.LibsFilter.IsIncl(fileSource)
                     ) // ActiveX
                 {
 

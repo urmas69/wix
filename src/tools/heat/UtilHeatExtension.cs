@@ -381,11 +381,12 @@ namespace WixToolset.Harvesters
 
                 if (!suppressHarvestingRegistryValues)
                 {
-                    UtilHarvesterMutator utilHarvesterMutator = new UtilHarvesterMutator();
+                    var utilHarvesterMutator = new UtilHarvesterMutator();
+                    var RootDirectory = Path.GetFullPath(this.Core.Harvester.Core.ExtensionArgument);
                     if (!String.IsNullOrEmpty(libsFile))
                     {
                         Console.WriteLine("libsFile: {0}", libsFile);
-                        this.ReadTextFileToList(libsFile, utilHarvesterMutator.Libs);
+                        utilHarvesterMutator.LibsFilter.Load(libsFile, RootDirectory);
                     }
                     if (!String.IsNullOrEmpty(olbsFile))
                     {
@@ -460,27 +461,6 @@ namespace WixToolset.Harvesters
             }
 
             //Console.WriteLine(string.Join("\n", tmp.ToArray()));
-            return tmp;
-        }
-
-        private List<Wildcard> ReadTextFileToList(string source, List<Wildcard> tmp)
-        {
-            try {
-                var RootDirectory = Path.GetFullPath(this.Core.Harvester.Core.ExtensionArgument);
-                using (StreamReader sr = new StreamReader(source)) {
-                    while (sr.Peek() >= 0) {
-                        var filename = sr.ReadLine();
-                        if (!filename.StartsWith("#", StringComparison.Ordinal))
-                        {
-                            tmp.Add(new Wildcard(Wildcard.GetFullPath(Path.Combine(RootDirectory, filename)), RegexOptions.IgnoreCase));
-                        }
-                    }
-
-                }
-            }
-            catch (Exception e) {
-                this.Core.Messaging.Write(ErrorMessages.InvalidCommandLineFileName(source, e.Message));
-            }
             return tmp;
         }
 
