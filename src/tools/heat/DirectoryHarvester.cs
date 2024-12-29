@@ -31,8 +31,7 @@ namespace WixToolset.Harvesters
             this.SetUniqueIdentifiers = true;
         }
 
-        public List<string> Excludes { get; set; } = new List<string>();
-        public List<string> Includes { get; set; } = new List<string>();
+        public HarvesterFilter Filter = new HarvesterFilter();
 
         /// <summary>
         /// Gets or sets what type of elements are to be generated.
@@ -217,18 +216,12 @@ namespace WixToolset.Harvesters
             // harvest the child directories
             foreach (string childDirectoryPath in Directory.GetDirectories(path))
             {
-                if (this.Includes.Count > 0 && !this.Includes.Contains(childDirectoryPath.ToLower()))
+                if (this.Filter.IsFiltered(childDirectoryPath))
                 {
-                    Console.WriteLine("include dir: {0}", childDirectoryPath.ToLower());
+                    Console.WriteLine("filtered dir: {0}", childDirectoryPath.ToLower());
                     continue;
                 }
-
-                if (this.Excludes.Count > 0 && this.Excludes.Contains(childDirectoryPath.ToLower()))
-                {
-                    Console.WriteLine("exclude dir: {0}", childDirectoryPath.ToLower());
-                    continue;
-                }
-
+  
                 var childDirectoryName = Path.GetFileName(childDirectoryPath);
                 Wix.IParentElement newParent;
                 Wix.Directory childDirectory = null;
@@ -258,7 +251,7 @@ namespace WixToolset.Harvesters
                     // keep the directory if it contained any files (or empty directories are being kept)
                     if (0 < childFileCount || this.KeepEmptyDirectories)
                     {
-                        Console.WriteLine("harvest dir:{0}", childDirectoryPath);
+                        //Console.WriteLine("harvest dir:{0}", childDirectoryPath);
                         directory.AddChild(childDirectory);
                     }
                 }
@@ -275,19 +268,13 @@ namespace WixToolset.Harvesters
                 {
                     string fileName = Path.GetFileName(filePath);
 
-                    if (this.Includes.Count > 0 && !this.Includes.Contains(filePath.ToLower()))
+                    if (this.Filter.IsFiltered(filePath))
                     {
-                        Console.WriteLine("include file: {0}", filePath.ToLower());
-                        continue;
-                    }
-
-                    if (this.Excludes.Count > 0 && this.Excludes.Contains(filePath.ToLower()))
-                    {
-                        Console.WriteLine("exclude file: {0}", filePath.ToLower());
+                        Console.WriteLine("filtered file: {0}", filePath.ToLower());
                         continue;
                     }
 					
-					Console.WriteLine("harvest file: {0}", filePath);
+					//Console.WriteLine("harvest file: {0}", filePath);
 
                     string source = String.Concat("SourceDir\\", relativePath, fileName);
 

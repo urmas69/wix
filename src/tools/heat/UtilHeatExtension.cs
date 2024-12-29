@@ -352,43 +352,25 @@ namespace WixToolset.Harvesters
                             return;
                         }
                     }
-                    else if ("excludes" == truncatedCommandSwitch)
+                    else if ("filter" == truncatedCommandSwitch)
                     {
-                        string excludesFile = this.GetArgumentParameter(args, i, true);
+                        string filterFile = this.GetArgumentParameter(args, i, true);
 
                         try
                         {
-                            excludesFile = Path.GetFullPath(excludesFile);
+                            filterFile = Path.GetFullPath(filterFile);
                             if (harvesterExtension is DirectoryHarvester harvester)
                             {
-                                this.ReadTextFileToList(excludesFile, harvester.Excludes);
+                                var RootDirectory = Path.GetFullPath(this.Core.Harvester.Core.ExtensionArgument);
+                                harvester.Filter.Load(filterFile, RootDirectory);
                             }
                         }
                         catch (Exception e)
                         {
-                            this.Core.Messaging.Write(ErrorMessages.InvalidCommandLineFileName(libsFile, e.Message));
+                            this.Core.Messaging.Write(ErrorMessages.InvalidCommandLineFileName(filterFile, e.Message));
                             return;
                         }
                     }
-                    else if ("includes" == truncatedCommandSwitch)
-                    {
-                        string excludesFile = this.GetArgumentParameter(args, i, true);
-
-                        try
-                        {
-                            excludesFile = Path.GetFullPath(excludesFile);
-                            if (harvesterExtension is DirectoryHarvester harvester)
-                            {
-                                this.ReadTextFileToList(excludesFile, harvester.Includes);
-                            }
-                        }
-                        catch (Exception e)
-                        {
-                            this.Core.Messaging.Write(ErrorMessages.InvalidCommandLineFileName(libsFile, e.Message));
-                            return;
-                        }
-                    }
-
                 }
             }
 
