@@ -5,7 +5,8 @@ namespace WixToolset.Harvesters
     using System;
     using System.Collections.Generic;
     using System.IO;
-	using System.Text.RegularExpressions;
+    using System.Linq;
+    using System.Text.RegularExpressions;
     using WixToolset.Data;
     using WixToolset.Harvesters.Data;
     using WixToolset.Harvesters.Extensibility;
@@ -354,15 +355,17 @@ namespace WixToolset.Harvesters
                     }
                     else if ("filter" == truncatedCommandSwitch)
                     {
-                        string filterFile = this.GetArgumentParameter(args, i, true);
-
+                        var filterArgs = this.GetArgumentParameter(args, i, true).Split(';');
+                        //Console.WriteLine("filter arg: {0}", filterArg);
+                        //var filterArgs = filterArg.Split(';');
+                        var filterFile = filterArgs[0];
                         try
                         {
                             filterFile = Path.GetFullPath(filterFile);
                             if (harvesterExtension is DirectoryHarvester harvester)
                             {
                                 var RootDirectory = Path.GetFullPath(this.Core.Harvester.Core.ExtensionArgument);
-                                harvester.Filter.Load(filterFile, RootDirectory);
+                                harvester.Filter.Load(filterFile, RootDirectory, filterArgs.ElementAtOrDefault(1));
                             }
                         }
                         catch (Exception e)

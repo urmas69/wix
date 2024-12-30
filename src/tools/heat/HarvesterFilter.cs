@@ -12,26 +12,32 @@ namespace WixToolset.Harvesters
 
     public class HarvesterFilter
     {
+        enum Mode { Unknow, Incl, Excl }
+
         private readonly object _lock = new object();
         private string _fileName;
         private string _startPath;
-        private bool _isExclusive;
-        private bool _isInclusive;
+        private string _fragment;
+
+        private Mode _mode = Mode.Unknow;
+
+        private bool _read;
         private List<Regex> _keyList = new List<Regex>();
 
-        public void Load(string fileName, string startPath)
+        public void Load(string fileName, string startPath, string fragment = null)
         {
+            Console.WriteLine($"HarvesterFilter load: {fileName} : {fragment}");
             _fileName = fileName ?? throw new ArgumentNullException(nameof(fileName));
             _startPath = startPath;
+            _fragment = fragment;
             ReloadKeyList();
         }
 
-        private List<string> LoadKeyList()
+        private HashSet<string> LoadKeyList()
         {
-            _isInclusive = false;
-            _isExclusive = false;
+            _mode = Mode.Unknow;
 
-            List<string> list = new List<string>();
+            HashSet<string> list = new HashSet<string>();
 
             var fileName = _fileName; // Path.Combine(cachePath, _fileName);
             if (!File.Exists(fileName))
@@ -40,37 +46,42 @@ namespace WixToolset.Harvesters
                 return list;
             }
 
-            Regex regInc = new Regex(@"^\+");
-            Regex regEx = new Regex(@"^-");
+            Regex regInc = new Regex($@"^\+{_fragment}");
+            Regex regEx = new Regex($@"^-{_fragment}");
             Regex regKey = new Regex(@"^[.\w\\:*]");
+            Regex regIgnore = new Regex(@"^[+-]");
             Regex regComment = new Regex(@"^#");
             //Regex regReload = new(@"^[\+-]!");
             Regex regExit = new Regex(@"^<");
 
             foreach (var line in File.ReadLines(fileName))
             {
-                if (regExit.IsMatch(line))
-                    break;
+                if (regExit.IsMatch(line)) break;
 
-                if (!_isExclusive && !_isInclusive && regInc.IsMatch(line))
+                if (regComment.IsMatch(line)) continue;
+
+                if (!_read)
                 {
-                    _isInclusive = true;
+                    if (regInc.IsMatch(line))
+                    {
+                        _read = true;
+                        if (_mode == Mode.Unknow) _mode = Mode.Incl;
+                    }
+                    else if (regEx.IsMatch(line))
+                    {
+                        _read = true;
+                        if (_mode == Mode.Unknow) _mode = Mode.Excl;
+                    }
                     //IsReload = !regReload.IsMatch(line);
                 }
-                else if (!_isExclusive && !_isInclusive && regEx.IsMatch(line))
+                else if (_read)
                 {
-                    _isExclusive = true;
-                    //IsReload = !regReload.IsMatch(line);
-                }
-                else if (_isExclusive || _isInclusive)
-                {
-                    if (regComment.IsMatch(line))
-                        continue;
+                    if (regIgnore.IsMatch(line)) continue;
 
                     if (regKey.IsMatch(line))
                         list.Add(line.Trim());
                     else
-                        break;
+                        _read = false;
                 }
             }
 
@@ -82,10 +93,14 @@ namespace WixToolset.Harvesters
             lock (_lock)
             {
                 var contains = _keyList.Any(r => r.IsMatch(name)); //  .Contains(name);
-                                                                   //return _isExclusive ? contains : !_isInclusive || !contains;
-                if (_isInclusive) return !contains;
-                if (_isExclusive) return contains;
-                return false;
+
+                return _mode switch
+                {
+                    //return _isExclusive ? contains : !_isInclusive || !contains;
+                    Mode.Incl => !contains,
+                    Mode.Excl => contains,
+                    _ => false
+                };
             }
         }
 
@@ -94,9 +109,12 @@ namespace WixToolset.Harvesters
             lock (_lock)
             {
                 var contains = _keyList.Any(r => r.IsMatch(name)); //  .Contains(name);
-                if (_isInclusive) return contains;
-                if (_isExclusive) return !contains;
-                return false; //IsIncl is explicit
+                return _mode switch
+                {
+                    Mode.Incl => contains,
+                    Mode.Excl => !contains,
+                    _ => false
+                };
             }
         }
 
@@ -125,8 +143,11 @@ namespace WixToolset.Harvesters
                                                               //.Replace(@"\.", ".+")
                                      + "$", option);
                 }).ToList();
-                //D($"_keyList: {_keyList.Count}");
+                //D($"-- _keyList: {_keyList.Count}:{_mode}");
+                //_keyList.Do(k => D($"+++ {k}"));
             }
         }
+
     }
+
 }
