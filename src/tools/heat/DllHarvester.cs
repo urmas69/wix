@@ -27,6 +27,8 @@ namespace WixToolset.Harvesters
             {
                 try
                 {
+                    //Console.WriteLine($"HarvesterFilter load: {file}");
+                    //System.Diagnostics.Process.Start(file, "regserver").WaitForExit();
                     DynamicPInvoke(file, "DllRegisterServer", typeof(int), null, null);
 
                     return registryHarvester.HarvestRegistry();

@@ -216,11 +216,13 @@ namespace WixToolset.Harvesters
             // harvest the child directories
             foreach (string childDirectoryPath in Directory.GetDirectories(path))
             {
+#if true
                 if (this.Filter.IsFiltered(childDirectoryPath))
                 {
                     Console.WriteLine("filtered dir: {0}", childDirectoryPath.ToLower());
                     continue;
                 }
+#endif
   
                 var childDirectoryName = Path.GetFileName(childDirectoryPath);
                 Wix.IParentElement newParent;
@@ -270,7 +272,7 @@ namespace WixToolset.Harvesters
 
                     if (this.Filter.IsFiltered(filePath))
                     {
-                        Console.WriteLine("filtered file: {0}", filePath.ToLower());
+                        //Console.WriteLine("filtered file: {0}", filePath.ToLower());
                         continue;
                     }
 					

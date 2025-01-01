@@ -128,6 +128,7 @@ namespace WixToolset.Harvesters
                 {
 
                     Console.WriteLine("libs: {0}", fileSource);
+                    //System.Diagnostics.Debugger.Launch();
                     // try the assembly harvester
                     try
                     {

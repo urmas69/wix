@@ -4,6 +4,7 @@
 <Project>
   <PropertyGroup>
     <SegmentName>tools</SegmentName>
+    <LangVersion>8.0</LangVersion>
   </PropertyGroup>
 
   <Import Project="..\Directory.Build.props" />
