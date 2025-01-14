@@ -3,11 +3,13 @@
 
 @set _C=Debug
 @set _L=%~dp0..\..\build\logs
+@set _NOTEST=
 
 :parse_args
 @if /i "%1"=="release" set _C=Release
 @if /i "%1"=="inc" set _INC=1
 @if /i "%1"=="clean" set _CLEAN=1
+@if /i "%1"=="notest" set _NOTEST=1
 @if not "%1"=="" shift & goto parse_args
 
 @set _B=%~dp0..\..\build\tools\%_C%
@@ -25,14 +27,14 @@ msbuild -Restore tools.sln -p:Configuration=%_C% -tl -nologo -m -warnaserror -bl
 :: Publish
 msbuild publish_t.proj -p:Configuration=%_C% -tl -nologo -m -warnaserror -bl:%_L%\tools_publish.binlog || exit /b
 
-@goto :pack
 :: Test
+@if NOT "%_NOTEST%"=="1" (
 dotnet test ^
  %_B%\test\WixToolsetTest.Heat\net472\WixToolsetTest.Heat.dll ^
  %_B%\test\WixToolsetTest.HeatTasks\net472\WixToolsetTest.HeatTasks.dll ^
  --nologo -l "trx;LogFileName=%_L%\TestResults\tools.trx" || exit /b
+)
 
-:pack
 :: Pack
 msbuild -t:Pack WixToolset.Heat -p:Configuration=%_C% -p:NoBuild=true -tl -nologo -m -warnaserror -bl:%_L%\tools_pack.binlog || exit /b
 
