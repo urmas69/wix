@@ -3,7 +3,6 @@
 namespace WixToolset.Harvesters
 {
     using System;
-    using System.Collections.Generic;
     using System.IO;
     using WixToolset.Data;
     using WixToolset.Data.WindowsInstaller;
@@ -30,8 +29,6 @@ namespace WixToolset.Harvesters
             this.fileHarvester = new FileHarvester();
             this.SetUniqueIdentifiers = true;
         }
-
-        public HarvesterFilter Filter = new HarvesterFilter();
 
         /// <summary>
         /// Gets or sets what type of elements are to be generated.
@@ -216,14 +213,14 @@ namespace WixToolset.Harvesters
             // harvest the child directories
             foreach (string childDirectoryPath in Directory.GetDirectories(path))
             {
-#if true
-                if (this.Filter.IsFiltered(childDirectoryPath))
+#if false
+                if (!HarvesterFilter.Instance<DirectoryHarvester>().IsIncl(childDirectoryPath))
                 {
                     Console.WriteLine("filtered dir: {0}", childDirectoryPath.ToLower());
                     continue;
                 }
 #endif
-  
+
                 var childDirectoryName = Path.GetFileName(childDirectoryPath);
                 Wix.IParentElement newParent;
                 Wix.Directory childDirectory = null;
@@ -270,7 +267,7 @@ namespace WixToolset.Harvesters
                 {
                     string fileName = Path.GetFileName(filePath);
 
-                    if (this.Filter.IsFiltered(filePath))
+                    if (!HarvesterFilter.Instance<DirectoryHarvester>().IsIncl(filePath))
                     {
                         //Console.WriteLine("filtered file: {0}", filePath.ToLower());
                         continue;

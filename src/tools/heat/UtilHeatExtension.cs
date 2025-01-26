@@ -5,8 +5,6 @@ namespace WixToolset.Harvesters
     using System;
     using System.Collections.Generic;
     using System.IO;
-    using System.Linq;
-    using System.Text.RegularExpressions;
     using WixToolset.Data;
     using WixToolset.Harvesters.Data;
     using WixToolset.Harvesters.Extensibility;
@@ -69,8 +67,6 @@ namespace WixToolset.Harvesters
             var utilMutator = new UtilMutator();
             var transformMutators = new List<UtilTransformMutator>();
             var generateType = GenerateType.Components;
-            string libsFile = null;
-            string olbsFile = null;
 
             // select the harvester
             switch (type)
@@ -312,65 +308,30 @@ namespace WixToolset.Harvesters
                     }
                     else if ("libs" == truncatedCommandSwitch)
                     {
-                        libsFile = this.GetArgumentParameter(args, i, true);
-
-                        if (0 <= libsFile.IndexOf('\"'))
-                        {
-                            this.Core.Messaging.Write(ErrorMessages.PathCannotContainQuote(libsFile));
-                            return;
-                        }
+                        var libsFileArgs = this.GetArgumentParameter(args, i, true);
 
                         try
                         {
-                            libsFile = Path.GetFullPath(libsFile);
+                            HarvesterFilter.Instance<UtilHarvesterMutator>()
+                                .Load(libsFileArgs, Path.GetFullPath(this.Core.Harvester.Core.ExtensionArgument));
                         }
                         catch (Exception e)
                         {
-                            this.Core.Messaging.Write(ErrorMessages.InvalidCommandLineFileName(libsFile, e.Message));
-                            return;
-                        }
-
-
-                        //Console.WriteLine( string.Join("\n", ReadTextFileToList(libsFile).ToArray() ) );
-                    }
-                    else if ("olbs" == truncatedCommandSwitch)
-                    {
-                        olbsFile = this.GetArgumentParameter(args, i, true);
-
-                        if (0 <= olbsFile.IndexOf('\"'))
-                        {
-                            this.Core.Messaging.Write(ErrorMessages.PathCannotContainQuote(olbsFile));
-                            return;
-                        }
-
-                        try
-                        {
-                            olbsFile = Path.GetFullPath(olbsFile);
-                        }
-                        catch (Exception e)
-                        {
-                            this.Core.Messaging.Write(ErrorMessages.InvalidCommandLineFileName(olbsFile, e.Message));
+                            this.Core.Messaging.Write(ErrorMessages.InvalidCommandLineFileName(libsFileArgs, e.Message));
                             return;
                         }
                     }
                     else if ("filter" == truncatedCommandSwitch)
                     {
-                        var filterArgs = this.GetArgumentParameter(args, i, true).Split(';');
-                        //Console.WriteLine("filter arg: {0}", filterArg);
-                        //var filterArgs = filterArg.Split(';');
-                        var filterFile = filterArgs[0];
+                        var filterArgs = this.GetArgumentParameter(args, i, true);
                         try
                         {
-                            filterFile = Path.GetFullPath(filterFile);
-                            if (harvesterExtension is DirectoryHarvester harvester)
-                            {
-                                var RootDirectory = Path.GetFullPath(this.Core.Harvester.Core.ExtensionArgument);
-                                harvester.Filter.Load(filterFile, RootDirectory, filterArgs.ElementAtOrDefault(1));
-                            }
+                            HarvesterFilter.Instance<DirectoryHarvester>()
+                                .Load(filterArgs, Path.GetFullPath(this.Core.Harvester.Core.ExtensionArgument));
                         }
                         catch (Exception e)
                         {
-                            this.Core.Messaging.Write(ErrorMessages.InvalidCommandLineFileName(filterFile, e.Message));
+                            this.Core.Messaging.Write(ErrorMessages.InvalidCommandLineFileName(filterArgs, e.Message));
                             return;
                         }
                     }
@@ -384,19 +345,7 @@ namespace WixToolset.Harvesters
 
                 if (!suppressHarvestingRegistryValues)
                 {
-                    var utilHarvesterMutator = new UtilHarvesterMutator();
-                    var RootDirectory = Path.GetFullPath(this.Core.Harvester.Core.ExtensionArgument);
-                    if (!String.IsNullOrEmpty(libsFile))
-                    {
-                        Console.WriteLine("libsFile: {0}", libsFile);
-                        utilHarvesterMutator.LibsFilter.Load(libsFile, RootDirectory);
-                    }
-                    if (!String.IsNullOrEmpty(olbsFile))
-                    {
-                        Console.WriteLine("olbsFile: {0}", olbsFile);
-                        utilHarvesterMutator.OlbsFilter.Load(olbsFile, RootDirectory);
-                    }
-                    this.Core.Mutator.AddExtension(utilHarvesterMutator);
+                    this.Core.Mutator.AddExtension(new UtilHarvesterMutator());
                 }
 
                 this.Core.Mutator.AddExtension(utilFinalizeHarvesterMutator);
