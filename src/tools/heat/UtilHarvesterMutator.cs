@@ -63,6 +63,8 @@ namespace WixToolset.Harvesters
             get { return 100; }
         }
 
+        public Platform? Platform { get; internal set; }
+
         /// <summary>
         /// Mutate a WiX document.
         /// </summary>
@@ -201,10 +203,28 @@ namespace WixToolset.Harvesters
               this.Core.Messaging.Write(HarvesterVerboses.HarvestingSelfReg(fileSource));
               Wix.RegistryValue[] registryValues = dllHarvester.HarvestRegistryValues(fileSource);
 
+              //System.Diagnostics.Debugger.Launch();
               foreach (Wix.RegistryValue registryValue in registryValues)
               {
                  parentElement.AddChild(registryValue);
               }
+
+              if (this.Platform!=null && registryValues.Length > 0)
+              {
+                    if (parentElement is Wix.Component component)
+                    {
+                        // Wenn der DLL-Harvester Werte extrahiert hat, ist dies eine 32-Bit-Komponente
+                        if(this.Platform==WixToolset.Data.Platform.X86)
+                        {
+                            component.Win64 =  Wix.YesNoType.no;
+                        }
+                        else
+                        {
+                            component.Win64 = Wix.YesNoType.yes;
+                        }
+                        //not working component.DisableRegistryReflection = Wix.YesNoType.yes;
+                    }
+                }
            }
            catch (TargetInvocationException tie)
            {

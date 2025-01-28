@@ -5,6 +5,7 @@ namespace WixToolset.Harvesters
     using System;
     using System.Collections.Generic;
     using System.IO;
+    using System.Linq;
     using WixToolset.Data;
     using WixToolset.Harvesters.Data;
     using WixToolset.Harvesters.Extensibility;
@@ -63,6 +64,7 @@ namespace WixToolset.Harvesters
             var active = false;
             IHarvesterExtension harvesterExtension = null;
             var suppressHarvestingRegistryValues = false;
+            Platform? platform = null;
             var utilFinalizeHarvesterMutator = new UtilFinalizeHarvesterMutator();
             var utilMutator = new UtilMutator();
             var transformMutators = new List<UtilTransformMutator>();
@@ -245,7 +247,7 @@ namespace WixToolset.Harvesters
                     else if (truncatedCommandSwitch.StartsWith("template:", StringComparison.Ordinal) || "template" == truncatedCommandSwitch)
                     {
                         string template;
-                        if(truncatedCommandSwitch.StartsWith("template:", StringComparison.Ordinal))
+                        if (truncatedCommandSwitch.StartsWith("template:", StringComparison.Ordinal))
                         {
                             this.Core.Messaging.Write(WarningMessages.DeprecatedCommandLineSwitch("template:", "template"));
                             template = truncatedCommandSwitch.Substring(9);
@@ -265,7 +267,7 @@ namespace WixToolset.Harvesters
                                 break;
                             case "package":
                             case "product":
-                                utilMutator.TemplateType = TemplateType.Package ;
+                                utilMutator.TemplateType = TemplateType.Package;
                                 break;
                             default:
                                 // TODO: error
@@ -335,6 +337,19 @@ namespace WixToolset.Harvesters
                             return;
                         }
                     }
+                    else if ("arch" == truncatedCommandSwitch)
+                    {
+                        var value = this.GetArgumentParameter(args, i, true);
+                        if (Enum.TryParse(value, true, out Platform _platform))
+                        {
+                            platform = _platform;
+                        }
+                        else if (!String.IsNullOrEmpty(value))
+                        {
+                            this.Core.Messaging.Write(ErrorMessages.IllegalCommandLineArgumentValue("arch", value, Enum.GetNames(typeof(Platform))
+                                .Select(s => s.ToLowerInvariant())));
+                        }
+                    }
                 }
             }
 
@@ -345,7 +360,9 @@ namespace WixToolset.Harvesters
 
                 if (!suppressHarvestingRegistryValues)
                 {
-                    this.Core.Mutator.AddExtension(new UtilHarvesterMutator());
+                    var utilHarvesterMutator= new UtilHarvesterMutator();
+                    utilHarvesterMutator.Platform = platform;
+                    this.Core.Mutator.AddExtension(utilHarvesterMutator);
                 }
 
                 this.Core.Mutator.AddExtension(utilFinalizeHarvesterMutator);

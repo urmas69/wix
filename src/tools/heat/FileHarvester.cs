@@ -91,6 +91,7 @@ namespace WixToolset.Harvesters
 
             Wix.Component component = new Wix.Component();
             component.AddChild(file);
+            //component.Win64 = Wix.YesNoType.no;
 
             Wix.Directory directory = new Wix.Directory();
 

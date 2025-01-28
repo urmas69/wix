@@ -37924,11 +37924,11 @@ namespace WixToolset.Harvesters.Serialize
             {
                 if ((this.win64Field == YesNoType.no))
                 {
-                    writer.WriteAttributeString("Win64", "no");
+                    writer.WriteAttributeString("Bitness", "always32");
                 }
                 if ((this.win64Field == YesNoType.yes))
                 {
-                    writer.WriteAttributeString("Win64", "yes");
+                    writer.WriteAttributeString("Bitness", "always64");
                 }
             }
             for (IEnumerator enumerator = this.children.GetEnumerator(); enumerator.MoveNext();)
