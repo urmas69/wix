@@ -87,6 +87,7 @@ namespace WixToolset.Harvesters
 
             var regInc = new Regex($@"^\+{this._fragment}", RegexOptions.Compiled);
             var regEx = new Regex($@"^-{this._fragment}", RegexOptions.Compiled);
+            var regCommentInline = new Regex(@"\s+#.*$", RegexOptions.Compiled); // Entfernt alles nach # mit vorangestelltem Leerraum
 
             bool ignoreBlock = false; // Steuert, ob der aktuelle Block ignoriert werden soll
 
@@ -145,7 +146,7 @@ namespace WixToolset.Harvesters
 
                     if (RegKey.IsMatch(line))
                     {
-                        list.Add(line.Trim()); // Füge gültige Schlüssel zur Liste hinzu.
+                        list.Add(regCommentInline.Replace(line, "").Trim()); // Füge gültige Schlüssel zur Liste hinzu.
                     }
                     else
                     {
